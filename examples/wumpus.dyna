@@ -1,0 +1,71 @@
+# size = 4 .
+# cell(0, 0) = true.
+# cell(I+1, J+1) = true for cell(I, I) & I < size
+
+coordinates = [1, 2, 3, 4].
+isCell([I, J]) := I in coordinates & J in coordinates.
+
+# example from http://www-scf.usc.edu/~csci460/docs/lecture/lec10.pdf
+#    . . . P
+#    P . . .
+#    . . G . 
+#    S . W .
+#
+# S is a starting position of the Agent at cell(1, 1)
+
+alive("wumpus") := true.
+
+wumpus( [1, 3] ).
+pit(    [3, 1] ).
+pit(    [4, 4] ).
+gold(   [2, 3] ).
+
+danger(Cell) |= pit( Cell ).
+danger(Cell) |= alive("wumpus") & wumpus( Cell ).
+
+# How write this compactly?
+alive("agent") := true.
+alive("agent") := false for danger(agentPosition) .
+
+start = [1, 1].
+isSafe(start) = true .
+
+agentPosition := start.
+agentOrientation := "up".
+
+## Movements
+
+#adjacent(From, direction, Target)
+adjacent([R1,C1],    "up", [R2,C2]) = true for isCell([R1,C1]) & isCell([R2,C2]) & (C1==C2) & (R1==R2-1) .
+adjacent([R1,C1],  "down", [R2,C2]) = true for isCell([R1,C1]) & isCell([R2,C2]) & (C1==C2) & (R1==R2+1) .
+adjacent([R1,C1],  "left", [R2,C2]) = true for isCell([R1,C1]) & isCell([R2,C2]) & (C1==C2+1) & (R1==R2) .
+adjacent([R1,C1], "right", [R2,C2]) = true for isCell([R1,C1]) & isCell([R2,C2]) & (C1==C2-1) & (R1==R2) .
+
+adjacent( Cell1, Cell2 ) = true for adjacent(Cell1, AnyDirection, Cell2).
+
+# Squares next to pits are breezy
+breeze(  Cell ) = true for pit(    Neighbor) & adjacent(Cell, Neighbor) .
+breeze(  Cell ) = true for pit(    Cell    ) .
+
+# ?! Cell=Neigbor doesn't work
+# stincky( Cell ) = true for wumpus( Neighbor) & (adjacent(Cell, Neighbor) | Cell is Neighbor) .
+
+stench( Cell ) = true for wumpus( Neighbor) & adjacent(Cell, Neighbor) .
+stench( Cell ) = true for wumpus( Cell ).
+
+# does not work?!
+# ok( Cell ) := true for !breezy(  Cell ) & !stincky( Cell ) .
+
+
+## Agent senses
+breezy  :- breeze( agentPosition ).
+stinchy :- stench( agentPosition ).
+
+thinkDanger( Cell ) :- (breezy | (stinchy & alive("wumpus")) ) & adjacent(agentPosition, Cell) .
+
+forwardCell = F for adjacent( agentPosition, agentOrientation, F).
+
+
+
+
+
